@@ -1,7 +1,6 @@
 package typeurl
 
 import (
-	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -17,7 +16,7 @@ func clear() {
 
 func TestRegisterPointerGetPointer(t *testing.T) {
 	clear()
-	expected := filepath.Join(Prefix, "test")
+	expected := "test"
 	Register(&test{}, "test")
 
 	url, err := TypeURL(&test{})
@@ -31,7 +30,7 @@ func TestRegisterPointerGetPointer(t *testing.T) {
 
 func TestMarshal(t *testing.T) {
 	clear()
-	expected := filepath.Join(Prefix, "test")
+	expected := "test"
 	Register(&test{}, "test")
 
 	v := &test{

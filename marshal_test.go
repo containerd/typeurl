@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	eventsapi "github.com/containerd/containerd/api/services/events/v1"
-	"github.com/containerd/containerd/typeurl"
+	eventsapi "github.com/containerd/containerd/api/events"
+	"github.com/containerd/typeurl"
 )
 
 func TestMarshalEvent(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	eventsapi "github.com/containerd/containerd/api/services/events/v1"
-	"github.com/containerd/containerd/typeurl"
+	eventstypes "github.com/containerd/containerd/api/events"
+	"github.com/containerd/typeurl"
 )
 
 func TestMarshalEvent(t *testing.T) {
@@ -15,13 +15,13 @@ func TestMarshalEvent(t *testing.T) {
 		url   string
 	}{
 		{
-			event: &eventsapi.TaskStart{},
-			url:   "types.containerd.io/containerd.services.events.v1.TaskStart",
+			event: &eventstypes.TaskStart{},
+			url:   "types.containerd.io/containerd.events.TaskStart",
 		},
 
 		{
-			event: &eventsapi.NamespaceUpdate{},
-			url:   "types.containerd.io/containerd.services.events.v1.NamespaceUpdate",
+			event: &eventstypes.NamespaceUpdate{},
+			url:   "types.containerd.io/containerd.events.NamespaceUpdate",
 		},
 	} {
 		t.Run(fmt.Sprintf("%T", testcase.event), func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestMarshalEvent(t *testing.T) {
 }
 
 func BenchmarkMarshalEvent(b *testing.B) {
-	ev := &eventsapi.TaskStart{}
+	ev := &eventstypes.TaskStart{}
 	expected, err := typeurl.MarshalAny(ev)
 	if err != nil {
 		b.Fatal(err)

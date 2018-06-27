@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	eventsapi "github.com/containerd/containerd/api/services/events/v1"
-	"github.com/containerd/containerd/typeurl"
+	eventsapi "github.com/containerd/containerd/api/events"
+	"github.com/containerd/typeurl"
 )
 
 func TestMarshalEvent(t *testing.T) {
@@ -16,12 +16,12 @@ func TestMarshalEvent(t *testing.T) {
 	}{
 		{
 			event: &eventsapi.TaskStart{},
-			url:   "types.containerd.io/containerd.services.events.v1.TaskStart",
+			url:   "containerd.events.TaskStart",
 		},
 
 		{
 			event: &eventsapi.NamespaceUpdate{},
-			url:   "types.containerd.io/containerd.services.events.v1.NamespaceUpdate",
+			url:   "containerd.events.NamespaceUpdate",
 		},
 	} {
 		t.Run(fmt.Sprintf("%T", testcase.event), func(t *testing.T) {

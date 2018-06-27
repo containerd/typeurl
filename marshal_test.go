@@ -1,13 +1,18 @@
-package typeurl_test
+package typeurl
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
-
-	eventsapi "github.com/containerd/containerd/api/services/events/v1"
-	"github.com/containerd/containerd/typeurl"
 )
+
+type TestType struct {
+	ID string
+}
+
+func init() {
+	Register(&TestType{}, "typeurl.Type")
+}
 
 func TestMarshalEvent(t *testing.T) {
 	for _, testcase := range []struct {
@@ -15,25 +20,20 @@ func TestMarshalEvent(t *testing.T) {
 		url   string
 	}{
 		{
-			event: &eventsapi.TaskStart{},
-			url:   "types.containerd.io/containerd.services.events.v1.TaskStart",
-		},
-
-		{
-			event: &eventsapi.NamespaceUpdate{},
-			url:   "types.containerd.io/containerd.services.events.v1.NamespaceUpdate",
+			event: &TestType{ID: "Test"},
+			url:   "typeurl.Type",
 		},
 	} {
 		t.Run(fmt.Sprintf("%T", testcase.event), func(t *testing.T) {
-			a, err := typeurl.MarshalAny(testcase.event)
+			a, err := MarshalAny(testcase.event)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if a.TypeUrl != testcase.url {
-				t.Fatalf("unexpected url: %v != %v", a.TypeUrl, testcase.url)
+				t.Fatalf("unexpected url: %q != %q", a.TypeUrl, testcase.url)
 			}
 
-			v, err := typeurl.UnmarshalAny(a)
+			v, err := UnmarshalAny(a)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -45,13 +45,13 @@ func TestMarshalEvent(t *testing.T) {
 }
 
 func BenchmarkMarshalEvent(b *testing.B) {
-	ev := &eventsapi.TaskStart{}
-	expected, err := typeurl.MarshalAny(ev)
+	ev := &TestType{}
+	expected, err := MarshalAny(ev)
 	if err != nil {
 		b.Fatal(err)
 	}
 	for i := 0; i < b.N; i++ {
-		a, err := typeurl.MarshalAny(ev)
+		a, err := MarshalAny(ev)
 		if err != nil {
 			b.Fatal(err)
 		}

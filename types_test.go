@@ -101,6 +101,56 @@ func TestMarshalUnmarshal(t *testing.T) {
 	}
 }
 
+func TestMarshalUnmarshalTo(t *testing.T) {
+	clear()
+	Register(&test{}, "test")
+
+	in := &test{
+		Name: "koye",
+		Age:  6,
+	}
+	any, err := MarshalAny(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := &test{}
+	err = UnmarshalTo(any, out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Name != "koye" {
+		t.Fatal("invalid name")
+	}
+	if out.Age != 6 {
+		t.Fatal("invalid age")
+	}
+}
+
+type test2 struct {
+	Name string
+}
+
+func TestUnmarshalToInvalid(t *testing.T) {
+	clear()
+	Register(&test{}, "test1")
+	Register(&test2{}, "test2")
+
+	in := &test{
+		Name: "koye",
+		Age:  6,
+	}
+	any, err := MarshalAny(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := &test2{}
+	err = UnmarshalTo(any, out)
+	if err == nil || err.Error() != `can't unmarshal type "test1" to output "test2"` {
+		t.Fatalf("unexpected result: %+v", err)
+	}
+}
+
 func TestIs(t *testing.T) {
 	clear()
 	Register(&test{}, "test")

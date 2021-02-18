@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	mu       sync.Mutex
+	mu       sync.RWMutex
 	registry = make(map[reflect.Type]string)
 )
 
@@ -56,9 +56,9 @@ func Register(v interface{}, args ...string) {
 
 // TypeURL returns the type url for a registered type.
 func TypeURL(v interface{}) (string, error) {
-	mu.Lock()
+	mu.RLock()
 	u, ok := registry[tryDereference(v)]
-	mu.Unlock()
+	mu.RUnlock()
 	if !ok {
 		// fallback to the proto registry if it is a proto message
 		pb, ok := v.(proto.Message)
@@ -166,13 +166,16 @@ type urlType struct {
 }
 
 func getTypeByUrl(url string) (urlType, error) {
+	mu.RLock()
 	for t, u := range registry {
 		if u == url {
+			mu.RUnlock()
 			return urlType{
 				t: t,
 			}, nil
 		}
 	}
+	mu.RUnlock()
 	// fallback to proto registry
 	t := proto.MessageType(url)
 	if t != nil {

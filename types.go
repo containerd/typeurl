@@ -18,13 +18,14 @@ package typeurl
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"path"
 	"reflect"
 	"sync"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -39,6 +40,7 @@ var (
 //
 // To detect an error class, use errors.Is() functions to tell whether an
 // error is of this type.
+
 var (
 	ErrNotFound = errors.New("not found")
 )
@@ -56,7 +58,7 @@ func Register(v interface{}, args ...string) {
 	defer mu.Unlock()
 	if et, ok := registry[t]; ok {
 		if et != p {
-			panic(errors.Errorf("type registered with alternate path %q != %q", et, p))
+			panic(fmt.Errorf("type registered with alternate path %q != %q", et, p))
 		}
 		return
 	}
@@ -72,7 +74,7 @@ func TypeURL(v interface{}) (string, error) {
 		// fallback to the proto registry if it is a proto message
 		pb, ok := v.(proto.Message)
 		if !ok {
-			return "", errors.Wrapf(ErrNotFound, "type %s", reflect.TypeOf(v))
+			return "", fmt.Errorf("type %s: %w", reflect.TypeOf(v), ErrNotFound)
 		}
 		return proto.MessageName(pb), nil
 	}
@@ -98,7 +100,7 @@ func MarshalAny(v interface{}) (*types.Any, error) {
 	var marshal func(v interface{}) ([]byte, error)
 	switch t := v.(type) {
 	case *types.Any:
-		// avoid reserializing the type if we have an any.
+		// avoid re-serializing the type if we have an any.
 		return t, nil
 	case proto.Message:
 		marshal = func(v interface{}) ([]byte, error) {
@@ -140,7 +142,7 @@ func UnmarshalTo(any *types.Any, out interface{}) error {
 	return UnmarshalToByTypeURL(any.TypeUrl, any.Value, out)
 }
 
-// UnmarshalTo unmarshals the given type and value into a concrete type passed
+// UnmarshalToByTypeURL unmarshals the given type and value into a concrete type passed
 // in the out argument. It is identical to UnmarshalByTypeURL, but lets clients
 // provide a destination type through the out argument.
 func UnmarshalToByTypeURL(typeURL string, value []byte, out interface{}) error {
@@ -163,7 +165,7 @@ func unmarshal(typeURL string, value []byte, v interface{}) (interface{}, error)
 			return nil, err
 		}
 		if typeURL != vURL {
-			return nil, errors.Errorf("can't unmarshal type %q to output %q", typeURL, vURL)
+			return nil, fmt.Errorf("can't unmarshal type %q to output %q", typeURL, vURL)
 		}
 	}
 
@@ -201,7 +203,7 @@ func getTypeByUrl(url string) (urlType, error) {
 			isProto: true,
 		}, nil
 	}
-	return urlType{}, errors.Wrapf(ErrNotFound, "type with url %s", url)
+	return urlType{}, fmt.Errorf("type with url %s: %w", url, ErrNotFound)
 }
 
 func tryDereference(v interface{}) reflect.Type {

@@ -24,8 +24,10 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
+	gogoproto "github.com/gogo/protobuf/proto"
+	gogotypes "github.com/gogo/protobuf/types"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 var (
@@ -44,6 +46,11 @@ var (
 var (
 	ErrNotFound = errors.New("not found")
 )
+
+type Any struct {
+	TypeURL string
+	Value   []byte
+}
 
 // Register a type with a base URL for JSON marshaling. When the MarshalAny and
 // UnmarshalAny functions are called they will treat the Any type value as JSON.
@@ -71,40 +78,50 @@ func TypeURL(v interface{}) (string, error) {
 	u, ok := registry[tryDereference(v)]
 	mu.RUnlock()
 	if !ok {
-		// fallback to the proto registry if it is a proto message
-		pb, ok := v.(proto.Message)
-		if !ok {
+		switch t := v.(type) {
+		case proto.Message:
+			return string(t.ProtoReflect().Descriptor().FullName()), nil
+		case gogoproto.Message:
+			return gogoproto.MessageName(t), nil
+		default:
 			return "", fmt.Errorf("type %s: %w", reflect.TypeOf(v), ErrNotFound)
 		}
-		return proto.MessageName(pb), nil
 	}
 	return u, nil
 }
 
 // Is returns true if the type of the Any is the same as v.
-func Is(any *types.Any, v interface{}) bool {
+func Is(any Any, v interface{}) bool {
 	// call to check that v is a pointer
 	tryDereference(v)
 	url, err := TypeURL(v)
 	if err != nil {
 		return false
 	}
-	return any.TypeUrl == url
+	return any.TypeURL == url
 }
 
 // MarshalAny marshals the value v into an any with the correct TypeUrl.
 // If the provided object is already a proto.Any message, then it will be
 // returned verbatim. If it is of type proto.Message, it will be marshaled as a
 // protocol buffer. Otherwise, the object will be marshaled to json.
-func MarshalAny(v interface{}) (*types.Any, error) {
+func MarshalAny(v interface{}) (Any, error) {
 	var marshal func(v interface{}) ([]byte, error)
 	switch t := v.(type) {
-	case *types.Any:
-		// avoid re-serializing the type if we have an any.
+	case Any:
+		// avoid reserializing the type if we have an any.
 		return t, nil
+	case *anypb.Any:
+		return Any{t.TypeUrl, t.Value}, nil
+	case *gogotypes.Any:
+		return Any{t.TypeUrl, t.Value}, nil
 	case proto.Message:
 		marshal = func(v interface{}) ([]byte, error) {
 			return proto.Marshal(t)
+		}
+	case gogoproto.Message:
+		marshal = func(v interface{}) ([]byte, error) {
+			return gogoproto.Marshal(t)
 		}
 	default:
 		marshal = json.Marshal
@@ -112,22 +129,22 @@ func MarshalAny(v interface{}) (*types.Any, error) {
 
 	url, err := TypeURL(v)
 	if err != nil {
-		return nil, err
+		return Any{}, err
 	}
 
 	data, err := marshal(v)
 	if err != nil {
-		return nil, err
+		return Any{}, err
 	}
-	return &types.Any{
-		TypeUrl: url,
+	return Any{
+		TypeURL: url,
 		Value:   data,
 	}, nil
 }
 
 // UnmarshalAny unmarshals the any type into a concrete type.
-func UnmarshalAny(any *types.Any) (interface{}, error) {
-	return UnmarshalByTypeURL(any.TypeUrl, any.Value)
+func UnmarshalAny(any Any) (interface{}, error) {
+	return UnmarshalByTypeURL(any.TypeURL, any.Value)
 }
 
 // UnmarshalByTypeURL unmarshals the given type and value to into a concrete type.
@@ -138,8 +155,8 @@ func UnmarshalByTypeURL(typeURL string, value []byte) (interface{}, error) {
 // UnmarshalTo unmarshals the any type into a concrete type passed in the out
 // argument. It is identical to UnmarshalAny, but lets clients provide a
 // destination type through the out argument.
-func UnmarshalTo(any *types.Any, out interface{}) error {
-	return UnmarshalToByTypeURL(any.TypeUrl, any.Value, out)
+func UnmarshalTo(any Any, out interface{}) error {
+	return UnmarshalToByTypeURL(any.TypeURL, any.Value, out)
 }
 
 // UnmarshalToByTypeURL unmarshals the given type and value into a concrete type passed
@@ -170,7 +187,12 @@ func unmarshal(typeURL string, value []byte, v interface{}) (interface{}, error)
 	}
 
 	if t.isProto {
-		err = proto.Unmarshal(value, v.(proto.Message))
+		switch t := v.(type) {
+		case proto.Message:
+			err = proto.Unmarshal(value, t)
+		case gogoproto.Message:
+			err = gogoproto.Unmarshal(value, t)
+		}
 	} else {
 		err = json.Unmarshal(value, v)
 	}
@@ -195,7 +217,7 @@ func getTypeByUrl(url string) (urlType, error) {
 	}
 	mu.RUnlock()
 	// fallback to proto registry
-	t := proto.MessageType(url)
+	t := gogoproto.MessageType(url)
 	if t != nil {
 		return urlType{
 			// get the underlying Elem because proto returns a pointer to the type

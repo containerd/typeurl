@@ -17,6 +17,7 @@
 package typeurl
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 )
@@ -57,8 +58,8 @@ func TestMarshal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if any.TypeUrl != expected {
-		t.Fatalf("expected %q but received %q", expected, any.TypeUrl)
+	if any.TypeURL != expected {
+		t.Fatalf("expected %q but received %q", expected, any.TypeURL)
 	}
 
 	// marshal it again and make sure we get the same thing back.
@@ -67,7 +68,10 @@ func TestMarshal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if newany != any { // you that right: we want the same *pointer*!
+	// Ensure pointer to same exact slice
+	newany.Value[0] = any.Value[0] ^ 0xff
+
+	if !bytes.Equal(newany.Value, any.Value) {
 		t.Fatalf("expected to get back same object: %v != %v", newany, any)
 	}
 

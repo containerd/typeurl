@@ -45,8 +45,8 @@ func TestMarshalEvent(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if a.TypeURL != testcase.url {
-				t.Fatalf("unexpected url: %q != %q", a.TypeURL, testcase.url)
+			if a.GetTypeUrl() != testcase.url {
+				t.Fatalf("unexpected url: %q != %q", a.GetTypeUrl(), testcase.url)
 			}
 
 			v, err := UnmarshalAny(a)
@@ -71,7 +71,7 @@ func BenchmarkMarshalEvent(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		if a.TypeURL != expected.TypeURL {
+		if a.GetTypeUrl() != expected.GetTypeUrl() {
 			b.Fatalf("incorrect type url: %v != %v", a, expected)
 		}
 	}

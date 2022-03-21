@@ -25,9 +25,7 @@ import (
 	"sync"
 
 	gogoproto "github.com/gogo/protobuf/proto"
-	gogotypes "github.com/gogo/protobuf/types"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 var (
@@ -47,9 +45,22 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
-type Any struct {
-	TypeURL string
-	Value   []byte
+type Any interface {
+	GetTypeUrl() string
+	GetValue() []byte
+}
+
+type any struct {
+	typeURL string
+	value   []byte
+}
+
+func (a any) GetTypeUrl() string {
+	return a.typeURL
+}
+
+func (a any) GetValue() []byte {
+	return a.value
 }
 
 // Register a type with a base URL for JSON marshaling. When the MarshalAny and
@@ -98,7 +109,7 @@ func Is(any Any, v interface{}) bool {
 	if err != nil {
 		return false
 	}
-	return any.TypeURL == url
+	return any.GetTypeUrl() == url
 }
 
 // MarshalAny marshals the value v into an any with the correct TypeUrl.
@@ -111,10 +122,6 @@ func MarshalAny(v interface{}) (Any, error) {
 	case Any:
 		// avoid reserializing the type if we have an any.
 		return t, nil
-	case *anypb.Any:
-		return Any{t.TypeUrl, t.Value}, nil
-	case *gogotypes.Any:
-		return Any{t.TypeUrl, t.Value}, nil
 	case proto.Message:
 		marshal = func(v interface{}) ([]byte, error) {
 			return proto.Marshal(t)
@@ -129,22 +136,22 @@ func MarshalAny(v interface{}) (Any, error) {
 
 	url, err := TypeURL(v)
 	if err != nil {
-		return Any{}, err
+		return any{}, err
 	}
 
 	data, err := marshal(v)
 	if err != nil {
-		return Any{}, err
+		return any{}, err
 	}
-	return Any{
-		TypeURL: url,
-		Value:   data,
+	return any{
+		typeURL: url,
+		value:   data,
 	}, nil
 }
 
 // UnmarshalAny unmarshals the any type into a concrete type.
 func UnmarshalAny(any Any) (interface{}, error) {
-	return UnmarshalByTypeURL(any.TypeURL, any.Value)
+	return UnmarshalByTypeURL(any.GetTypeUrl(), any.GetValue())
 }
 
 // UnmarshalByTypeURL unmarshals the given type and value to into a concrete type.
@@ -156,7 +163,7 @@ func UnmarshalByTypeURL(typeURL string, value []byte) (interface{}, error) {
 // argument. It is identical to UnmarshalAny, but lets clients provide a
 // destination type through the out argument.
 func UnmarshalTo(any Any, out interface{}) error {
-	return UnmarshalToByTypeURL(any.TypeURL, any.Value, out)
+	return UnmarshalToByTypeURL(any.GetTypeUrl(), any.GetValue(), out)
 }
 
 // UnmarshalToByTypeURL unmarshals the given type and value into a concrete type passed

@@ -55,11 +55,17 @@ type any struct {
 	value   []byte
 }
 
-func (a any) GetTypeUrl() string {
+func (a *any) GetTypeUrl() string {
+	if a == nil {
+		return ""
+	}
 	return a.typeURL
 }
 
-func (a any) GetValue() []byte {
+func (a *any) GetValue() []byte {
+	if a == nil {
+		return nil
+	}
 	return a.value
 }
 
@@ -136,14 +142,14 @@ func MarshalAny(v interface{}) (Any, error) {
 
 	url, err := TypeURL(v)
 	if err != nil {
-		return any{}, err
+		return nil, err
 	}
 
 	data, err := marshal(v)
 	if err != nil {
-		return any{}, err
+		return nil, err
 	}
-	return any{
+	return &any{
 		typeURL: url,
 		value:   data,
 	}, nil
@@ -175,6 +181,10 @@ func UnmarshalToByTypeURL(typeURL string, value []byte, out interface{}) error {
 }
 
 func unmarshal(typeURL string, value []byte, v interface{}) (interface{}, error) {
+	if value == nil {
+		return nil, nil
+	}
+
 	t, err := getTypeByUrl(typeURL)
 	if err != nil {
 		return nil, err

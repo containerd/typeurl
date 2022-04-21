@@ -20,9 +20,12 @@ import (
 	"bytes"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/gogo/protobuf/proto"
 	gogotypes "github.com/gogo/protobuf/types"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type test struct {
@@ -219,5 +222,24 @@ func TestCheckNil(t *testing.T) {
 	actual := a.GetValue()
 	if actual != nil {
 		t.Fatalf("expected nil, got %v", actual)
+	}
+}
+
+func TestProtoFallback(t *testing.T) {
+	expected := time.Now()
+	b, err := proto.Marshal(timestamppb.New(expected))
+	if err != nil {
+		t.Fatal(err)
+	}
+	x, err := UnmarshalByTypeURL("type.googleapis.com/google.protobuf.Timestamp", b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts, ok := x.(*timestamppb.Timestamp)
+	if !ok {
+		t.Fatalf("failed to convert %+v to Timestamp", x)
+	}
+	if expected.Sub(ts.AsTime()) != 0 {
+		t.Fatalf("expected %+v but got %+v", expected, ts.AsTime())
 	}
 }

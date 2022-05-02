@@ -51,19 +51,19 @@ type Any interface {
 	GetValue() []byte
 }
 
-type any struct {
+type anyType struct {
 	typeURL string
 	value   []byte
 }
 
-func (a *any) GetTypeUrl() string {
+func (a *anyType) GetTypeUrl() string {
 	if a == nil {
 		return ""
 	}
 	return a.typeURL
 }
 
-func (a *any) GetValue() []byte {
+func (a *anyType) GetValue() []byte {
 	if a == nil {
 		return nil
 	}
@@ -150,7 +150,7 @@ func MarshalAny(v interface{}) (Any, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &any{
+	return &anyType{
 		typeURL: url,
 		value:   data,
 	}, nil

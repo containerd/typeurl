@@ -217,7 +217,7 @@ func TestUnmarshalNil(t *testing.T) {
 }
 
 func TestCheckNil(t *testing.T) {
-	var a *any
+	var a *anyType
 
 	actual := a.GetValue()
 	if actual != nil {

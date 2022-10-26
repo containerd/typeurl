@@ -15,12 +15,12 @@ jobs:
         go: ['1.17.x', '1.18.x']
 
     name: Typeurl CI
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
 
     - name: Set up Go ${{ matrix.go }}
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go }}
 
@@ -31,13 +31,13 @@ jobs:
         echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
     - name: Check out code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: src/github.com/containerd/typeurl
         fetch-depth: 25
 
     - name: Checkout project
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: containerd/project
         path: src/github.com/containerd/project

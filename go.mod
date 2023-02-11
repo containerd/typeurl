@@ -1,4 +1,4 @@
-module github.com/containerd/typeurl
+module github.com/containerd/typeurl/v2
 
 go 1.13
 

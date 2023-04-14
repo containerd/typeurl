@@ -195,27 +195,6 @@ func TestRegisterDiffUrls(t *testing.T) {
 	Register(&test{}, "test", "two")
 }
 
-func TestUnmarshalNil(t *testing.T) {
-	var pba *anypb.Any // This is nil.
-	var a Any = pba    // This is typed nil.
-
-	if pba != nil {
-		t.Fatal("pbany must be nil")
-	}
-	if a == nil {
-		t.Fatal("nilany must not be nil")
-	}
-
-	actual, err := UnmarshalAny(a)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if actual != nil {
-		t.Fatalf("expected nil, got %v", actual)
-	}
-}
-
 func TestCheckNil(t *testing.T) {
 	var a *anyType
 

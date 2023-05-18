@@ -182,6 +182,9 @@ func TestIs(t *testing.T) {
 	if !Is(any, &test{}) {
 		t.Fatal("Is(any, test{}) should be true")
 	}
+
+	// shouldn't crash
+	Is(nil, &test{})
 }
 
 func TestRegisterDiffUrls(t *testing.T) {

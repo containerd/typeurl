@@ -1,6 +1,6 @@
 module github.com/containerd/typeurl/v2
 
-go 1.13
+go 1.21
 
 require (
 	github.com/gogo/protobuf v1.3.2

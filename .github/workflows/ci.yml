@@ -12,10 +12,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: ['1.17.x', '1.18.x']
+        go: ['1.21.x', '1.22.x']
 
     name: Typeurl CI
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
 

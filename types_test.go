@@ -167,6 +167,13 @@ func TestUnmarshalToInvalid(t *testing.T) {
 	}
 }
 
+func TestFromAny(t *testing.T) {
+	actual := MarshalProto(nil)
+	if actual != nil {
+		t.Fatalf("expected nil, got %v", actual)
+	}
+}
+
 func TestIs(t *testing.T) {
 	clear()
 	Register(&test{}, "test")

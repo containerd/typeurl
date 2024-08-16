@@ -232,3 +232,29 @@ func TestProtoFallback(t *testing.T) {
 		t.Fatalf("expected %+v but got %+v", expected, ts.AsTime())
 	}
 }
+
+func TestManualProtoRegistration(t *testing.T) {
+	ts := &timestamppb.Timestamp{}
+	defer func() {
+		mu.Lock()
+		delete(registry, tryDereference(ts))
+		mu.Unlock()
+	}()
+	Register(ts, t.Name())
+
+	expected := time.Now()
+	a, err := MarshalAny(timestamppb.New(expected))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	i, err := UnmarshalAny(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actual := i.(*timestamppb.Timestamp).AsTime()
+	if !actual.Equal(expected) {
+		t.Fatalf("unexpected time %s, expected %s", actual, expected)
+	}
+}

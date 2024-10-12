@@ -24,7 +24,6 @@ import (
 	"reflect"
 	"sync"
 
-	gogoproto "github.com/gogo/protobuf/proto"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -112,8 +111,6 @@ func TypeURL(v interface{}) (string, error) {
 		switch t := v.(type) {
 		case proto.Message:
 			return string(t.ProtoReflect().Descriptor().FullName()), nil
-		case gogoproto.Message:
-			return gogoproto.MessageName(t), nil
 		default:
 			return "", fmt.Errorf("type %s: %w", reflect.TypeOf(v), ErrNotFound)
 		}
@@ -148,10 +145,6 @@ func MarshalAny(v interface{}) (Any, error) {
 	case proto.Message:
 		marshal = func(v interface{}) ([]byte, error) {
 			return proto.Marshal(t)
-		}
-	case gogoproto.Message:
-		marshal = func(v interface{}) ([]byte, error) {
-			return gogoproto.Marshal(t)
 		}
 	default:
 		marshal = json.Marshal
@@ -229,7 +222,7 @@ func unmarshal(typeURL string, value []byte, v interface{}) (interface{}, error)
 	}
 
 	if v == nil {
-		v = reflect.New(t.t).Interface()
+		v = reflect.New(t).Interface()
 	} else {
 		// Validate interface type provided by client
 		vURL, err := TypeURL(v)
@@ -241,13 +234,9 @@ func unmarshal(typeURL string, value []byte, v interface{}) (interface{}, error)
 		}
 	}
 
-	if t.isProto {
-		switch t := v.(type) {
-		case proto.Message:
-			err = proto.Unmarshal(value, t)
-		case gogoproto.Message:
-			err = gogoproto.Unmarshal(value, t)
-		}
+	pm, ok := v.(proto.Message)
+	if ok {
+		err = proto.Unmarshal(value, pm)
 	} else {
 		err = json.Unmarshal(value, v)
 	}
@@ -255,37 +244,21 @@ func unmarshal(typeURL string, value []byte, v interface{}) (interface{}, error)
 	return v, err
 }
 
-type urlType struct {
-	t       reflect.Type
-	isProto bool
-}
-
-func getTypeByUrl(url string) (urlType, error) {
+func getTypeByUrl(url string) (reflect.Type, error) {
 	mu.RLock()
 	for t, u := range registry {
 		if u == url {
 			mu.RUnlock()
-			return urlType{
-				t: t,
-			}, nil
+			return t, nil
 		}
 	}
 	mu.RUnlock()
-	// fallback to proto registry
-	t := gogoproto.MessageType(url)
-	if t != nil {
-		return urlType{
-			// get the underlying Elem because proto returns a pointer to the type
-			t:       t.Elem(),
-			isProto: true,
-		}, nil
-	}
 	mt, err := protoregistry.GlobalTypes.FindMessageByURL(url)
 	if err != nil {
-		return urlType{}, fmt.Errorf("type with url %s: %w", url, ErrNotFound)
+		return nil, fmt.Errorf("type with url %s: %w", url, ErrNotFound)
 	}
 	empty := mt.New().Interface()
-	return urlType{t: reflect.TypeOf(empty).Elem(), isProto: true}, nil
+	return reflect.TypeOf(empty).Elem(), nil
 }
 
 func tryDereference(v interface{}) reflect.Type {

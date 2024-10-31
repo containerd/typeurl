@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	gogotypes "github.com/gogo/protobuf/types"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -37,7 +36,6 @@ func clear() {
 	registry = make(map[reflect.Type]string)
 }
 
-var _ Any = &gogotypes.Any{}
 var _ Any = &anypb.Any{}
 
 func TestRegisterPointerGetPointer(t *testing.T) {

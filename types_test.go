@@ -18,6 +18,7 @@ package typeurl
 
 import (
 	"bytes"
+	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -228,5 +229,15 @@ func TestProtoFallback(t *testing.T) {
 	}
 	if expected.Sub(ts.AsTime()) != 0 {
 		t.Fatalf("expected %+v but got %+v", expected, ts.AsTime())
+	}
+}
+
+func TestUnmarshalNotFound(t *testing.T) {
+	_, err := UnmarshalByTypeURL("doesntexist", []byte("{}"))
+	if err == nil {
+		t.Fatalf("expected error unmarshalling type which does not exist")
+	}
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("unexpected error unmarshalling type which does not exist: %v", err)
 	}
 }

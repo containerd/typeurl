@@ -18,6 +18,7 @@ package typeurl
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"reflect"
 	"testing"
@@ -239,5 +240,26 @@ func TestUnmarshalNotFound(t *testing.T) {
 	}
 	if !errors.Is(err, ErrNotFound) {
 		t.Fatalf("unexpected error unmarshalling type which does not exist: %v", err)
+	}
+}
+
+func TestUnmarshalJSON(t *testing.T) {
+	url := t.Name()
+	Register(&timestamppb.Timestamp{}, url)
+
+	expected := timestamppb.Now()
+
+	dt, err := json.Marshal(expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var actual timestamppb.Timestamp
+	if err := UnmarshalToByTypeURL(url, dt, &actual); err != nil {
+		t.Fatal(err)
+	}
+
+	if !expected.AsTime().Equal(actual.AsTime()) {
+		t.Fatalf("expected value to be %q, got: %q", expected.AsTime(), actual.AsTime())
 	}
 }

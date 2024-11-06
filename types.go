@@ -216,7 +216,7 @@ func MarshalAnyToProto(from interface{}) (*anypb.Any, error) {
 }
 
 func unmarshal(typeURL string, value []byte, v interface{}) (interface{}, error) {
-	t, err := getTypeByUrl(typeURL)
+	t, isProto, err := getTypeByUrl(typeURL)
 	if err != nil {
 		return nil, err
 	}
@@ -234,31 +234,32 @@ func unmarshal(typeURL string, value []byte, v interface{}) (interface{}, error)
 		}
 	}
 
-	pm, ok := v.(proto.Message)
-	if ok {
-		err = proto.Unmarshal(value, pm)
-	} else {
-		err = json.Unmarshal(value, v)
+	if isProto {
+		pm, ok := v.(proto.Message)
+		if ok {
+			err = proto.Unmarshal(value, pm)
+			return v, err
+		}
 	}
+	return v, json.Unmarshal(value, v)
 
-	return v, err
 }
 
-func getTypeByUrl(url string) (reflect.Type, error) {
+func getTypeByUrl(url string) (_ reflect.Type, isProto bool, _ error) {
 	mu.RLock()
 	for t, u := range registry {
 		if u == url {
 			mu.RUnlock()
-			return t, nil
+			return t, false, nil
 		}
 	}
 	mu.RUnlock()
 	mt, err := protoregistry.GlobalTypes.FindMessageByURL(url)
 	if err != nil {
-		return nil, fmt.Errorf("type with url %s: %w", url, ErrNotFound)
+		return nil, false, fmt.Errorf("type with url %s: %w", url, ErrNotFound)
 	}
 	empty := mt.New().Interface()
-	return reflect.TypeOf(empty).Elem(), nil
+	return reflect.TypeOf(empty).Elem(), true, nil
 }
 
 func tryDereference(v interface{}) reflect.Type {

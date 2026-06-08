@@ -23,7 +23,7 @@ jobs:
     steps:
 
     - name: Set up Go ${{ matrix.go }}
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v6.4.0
       with:
         go-version: ${{ matrix.go }}
 
@@ -34,14 +34,14 @@ jobs:
         echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
     - name: Check out code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6.0.3
       with:
         path: src/github.com/containerd/typeurl
         fetch-depth: 25
         persist-credentials: false
 
     - name: Project Checks
-      uses: containerd/project-checks@v1.1.0
+      uses: containerd/project-checks@v1.2.2
       with:
         working-directory: src/github.com/containerd/typeurl
 

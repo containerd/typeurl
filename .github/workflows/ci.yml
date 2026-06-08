@@ -9,29 +9,24 @@ on:
 permissions:
   contents: read
 
+env:
+  GOTOOLCHAIN: local
+
 jobs:
 
   build:
     strategy:
       fail-fast: false
       matrix:
-        go: ['1.21.x', '1.22.x', '1.23.x']
+        go-version:
+          - "" # leave empty to use go-version-file (use go.mod); see https://github.com/actions/setup-go/issues/450#issuecomment-3620402646
+          - oldstable
+          - stable
 
-    name: Typeurl CI
+    name: ${{ matrix.go-version || 'minimum' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-
-    - name: Set up Go ${{ matrix.go }}
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
-      with:
-        go-version: ${{ matrix.go }}
-
-    - name: Setup Go binary path
-      shell: bash
-      run: |
-        echo "GOPATH=${{ github.workspace }}" >> $GITHUB_ENV
-        echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
     - name: Check out code
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -39,6 +34,18 @@ jobs:
         path: src/github.com/containerd/typeurl
         fetch-depth: 25
         persist-credentials: false
+
+    - name: Set up Go
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+      with:
+        go-version: ${{ matrix.go-version }}
+        go-version-file: src/github.com/containerd/typeurl/go.mod # used when go-version is empty.
+
+    - name: Setup Go binary path
+      shell: bash
+      run: |
+        echo "GOPATH=${{ github.workspace }}" >> $GITHUB_ENV
+        echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
 
     - name: Project Checks
       uses: containerd/project-checks@d7751f3c375b8fe4a84c02a068184ee4c1f59bc4 # v1.2.2

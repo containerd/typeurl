@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
 
   build:
@@ -35,6 +38,7 @@ jobs:
       with:
         path: src/github.com/containerd/typeurl
         fetch-depth: 25
+        persist-credentials: false
 
     - name: Project Checks
       uses: containerd/project-checks@v1.1.0
